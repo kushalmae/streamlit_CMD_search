@@ -1,0 +1,15 @@
+Command,HexCode,Description,Params
+CMD_ARM_SYSTEM,0xAF23,Arms the safety-critical subsystems for operation,"Mode,Delay"
+CMD_SET_MODE,0xB104,Sets the system operational mode (SAFE/LIVE/TEST),Mode
+CMD_DEPLOY_ANTENNA,0xC302,Deploys the primary communication antenna,"DeployType,Confirm"
+CMD_POWER_ON_SUBSYSTEM,0xD405,Powers on specified subsystem with safety checks,"SubsystemID,PowerLevel"
+CMD_POWER_OFF_SUBSYSTEM,0xD406,Powers off specified subsystem gracefully,"SubsystemID,Confirm"
+CMD_SET_ATTITUDE,0xE507,Sets satellite attitude using reaction wheels,"Roll,Pitch,Yaw,Duration"
+CMD_START_RECORDING,0xF608,Starts data recording from all active sensors,"DataType,Compression"
+CMD_STOP_RECORDING,0xF609,Stops data recording and closes files,Confirm
+CMD_TRANSMIT_DATA,0xG710,Initiates data transmission to ground station,"GroundStation,Frequency,PowerLevel"
+CMD_ENTER_SAFE_MODE,0xH811,Forces satellite into safe mode immediately,Reason
+CMD_CALIBRATE_SENSOR,0xI912,Calibrates specified sensor with reference values,"SensorID,CalType"
+CMD_UPDATE_ORBIT,0xJ013,Updates orbital parameters and trajectory,"Altitude,Inclination,RAAN"
+CMD_ACTIVATE_PAYLOAD,0xK114,Activates scientific payload instruments,"PayloadID,Config"
+CMD_SHUTDOWN_PAYLOAD,0xK115,Shuts down payload to conserve power,"PayloadID,SaveState"
