@@ -1,10 +1,37 @@
+"""
+Data Loader for Command Search System
+
+This module loads and processes CSV files containing command information,
+parameter metadata, and enum definitions. Provides functionality to search
+and display detailed command information.
+
+CSV Files Required:
+- master_commands.csv: Command names, hex codes, descriptions, parameters
+- parameter_metadata.csv: Parameter types, ranges, enum sets
+- enum_definitions.csv: Enum values and labels
+
+Usage:
+    python data_loader.py [command_name]
+"""
+
 import pandas as pd
+import argparse
+import sys
 
 # Global cache for data
 _cached_data = None
 
 def load_data():
-    """Load CSV data files with optimizations"""
+    """
+    Load and cache CSV data files with performance optimizations.
+    
+    Returns:
+        Pandas DataFrame: (commands_df, params_df, enums_df) - DataFrames containing
+               command data, parameter metadata, and enum definitions
+    
+    Note:
+        Data is cached globally to avoid reloading on subsequent calls.
+    """
     global _cached_data
     
     # Use cache if data already loaded
@@ -12,6 +39,7 @@ def load_data():
         return _cached_data
     
     # Define data types for faster loading (2-3x improvement)
+    # Specifying dtypes prevents pandas from inferring types, which is slow
     commands_dtypes = {
         'Command': 'string',
         'HexCode': 'string', 
@@ -42,7 +70,22 @@ def load_data():
     return _cached_data
 
 def get_command_details(command_name, commands_df, params_df, enums_df):
-    """Get detailed information for a specific command"""
+    """
+    Get detailed information for a specific command.
+    
+    Args:
+        command_name (str): Name of the command to look up
+        commands_df (DataFrame): Commands data
+        params_df (DataFrame): Parameter metadata
+        enums_df (DataFrame): Enum definitions
+    
+    Returns:
+        Pandas DataFrame: (hex_code, description, param_details)
+            - hex_code (str): Command's hexadecimal code
+            - description (str): Command description
+            - param_details (list): List of parameter dictionaries with
+              name, type, range, and enum_values keys
+    """
     # Find the command
     cmd = commands_df[commands_df['Command'] == command_name].iloc[0]
     hex_code = cmd['HexCode']
@@ -75,11 +118,12 @@ def get_command_details(command_name, commands_df, params_df, enums_df):
                 "enum_values": None
             }
             
-            # Handle enum types
+            # Handle enum types - lookup enum values and labels
             if param_row["Type"] == "enum" and pd.notna(param_row["EnumSet"]):
                 enum_set = param_row["EnumSet"]
                 enum_vals = enums_df[enums_df["EnumSet"] == enum_set]
                 if not enum_vals.empty:
+                    # Create value:label mapping for display
                     param_info["enum_values"] = dict(
                         zip(enum_vals["Value"].astype(str), enum_vals["Label"])
                     )
@@ -87,3 +131,46 @@ def get_command_details(command_name, commands_df, params_df, enums_df):
         param_details.append(param_info)
     
     return hex_code, description, param_details
+
+def main():
+    """
+    Main entry point for the command search tool.
+    
+    Handles command-line arguments and user input to search for and display
+    command details. If no command is provided as an argument, prompts the
+    user for input.
+    """
+    parser = argparse.ArgumentParser(description='Get command details')
+    parser.add_argument('command', nargs='?', help='Command name to search for')
+    args = parser.parse_args()
+    
+    # Load data
+    commands_df, params_df, enums_df = load_data()
+    
+    # Get command name
+    command_name = args.command
+    if not command_name:
+        command_name = input("Enter command name: ").strip()
+    
+    # Find and display command details
+    if command_name in commands_df['Command'].values:
+        hex_code, description, param_details = get_command_details(
+            command_name, commands_df, params_df, enums_df
+        )
+        
+        print(f"\nCommand: {command_name}")
+        print(f"Hex Code: {hex_code}")
+        print(f"Description: {description}")
+        
+        if param_details:
+            print("\nParameters:")
+            for param in param_details:
+                print(f"  - {param['name']} ({param['type']})")
+                if param['enum_values']:
+                    for value, label in param['enum_values'].items():
+                        print(f"    {value}: {label}")
+    else:
+        print(f"Command '{command_name}' not found")
+
+if __name__ == "__main__":
+    main()
